@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Game.Monopoly
   ( Property      (..)
   , PropertyState (..)
@@ -7,8 +9,16 @@ module Game.Monopoly
   , diceRolls
   ) where
 
-import Data.Bits
 import System.Random
+
+instance Random (Int, Int) where
+  randomR ((x1,y1),(x2,y2)) g =
+    let
+      (x', g1) = randomR (x1, x2) g
+      (y', g2) = randomR (y1, y2) g1
+    in
+      ((x', y'), g2)
+  random g = randomR (minBound,maxBound) g
 
 -- | Properties.
 data Property
@@ -128,11 +138,4 @@ nextBoardPosition a b = case a of
     ]
 
 diceRolls :: Int -> [(Int, Int)]
-diceRolls seed = pair $ filter validRoll $ map (.&. 0x7) $ randoms $ mkStdGen seed
-  where
-  validRoll a = a >= 1 && a <= 6
-  pair :: [Int] -> [(Int, Int)]
-  pair a = case a of
-    a : b : c -> (a, b) : pair c
-    _ -> []
-
+diceRolls = randomRs ((1,1),(6,6)) . mkStdGen
